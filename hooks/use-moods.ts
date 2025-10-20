@@ -4,30 +4,23 @@ import { useCallback } from "react";
 import { toast } from "sonner";
 
 export function useMoods() {
-  const {
-    isLoading,
-    updateMood: contextUpdateMood,
-    getMoodForDay,
-  } = useMoodContext();
+  const { isLoading, updateDayMood: contextUpdateMood } = useMoodContext();
 
   const updateMood = useCallback(
-    async (day: DayOfWeek, mood: MoodType | null) => {
+    async (day: DayOfWeek, mood: MoodType) => {
       try {
         await contextUpdateMood(day, mood);
-
-        // Show success toast
-        toast("Mood updated");
+        toast.success("Mood updated successfully! 🎉");
       } catch (error) {
-        // Show error toast
-        toast("Failed to update mood");
+        console.error("Failed to update mood:", error);
+        toast.error("Failed to update mood. Please try again.");
       }
     },
-    [contextUpdateMood, toast]
+    [contextUpdateMood]
   );
 
   return {
     isLoading,
-    getMoodForDay,
     updateMood,
   };
 }

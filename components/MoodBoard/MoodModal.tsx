@@ -72,22 +72,6 @@ export function MoodModal({
             </Button>
           ))}
         </div>
-
-        {currentMood && (
-          <div className="flex justify-center pt-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                onSelectMood(null as any);
-                onOpenChange(false);
-              }}
-              className="text-muted-foreground"
-            >
-              Clear mood
-            </Button>
-          </div>
-        )}
       </DialogContent>
     </Dialog>
   );

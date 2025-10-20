@@ -1,50 +1,44 @@
-// app/services/moods.api.ts
-import {
-  MoodBoardState,
-  UpdateMoodRequest,
-  UpdateMoodResponse,
-  DayMood,
-  MoodStats,
-} from "@/types/mood.types";
+import { UpdateMoodRequest, UpdateMoodResponse, Day } from "@/types/mood.types";
 
-class MoodsAPI {
-  private baseUrl = "/api/moods";
+class DaysAPI {
+  private baseUrl = "/api/days";
 
   /**
-   * Fetch all moods for the week
+   * Fetch all days with mood information for the week
    */
-  async fetchMoods(): Promise<MoodBoardState> {
+  async fetchDays(): Promise<Day[]> {
     const response = await fetch(this.baseUrl, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
-    if (!response.ok) throw new Error("Failed to fetch moods");
-    return response.json();
-  }
 
-  /**
-   * Fetch mood for a specific day
-   */
-  async fetchMoodForDay(day: string): Promise<{ data: DayMood }> {
-    const response = await fetch(`${this.baseUrl}/${day}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
-    if (!response.ok) throw new Error(`Failed to fetch mood for ${day}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch days");
+    }
+
     return response.json();
   }
 
   /**
    * Update mood for a specific day
    */
-  async updateMood(request: UpdateMoodRequest): Promise<UpdateMoodResponse> {
-    const { day, mood } = request;
+  async updateMood(
+    day: string,
+    request: UpdateMoodRequest
+  ): Promise<UpdateMoodResponse> {
+    const { mood } = request;
+
     const response = await fetch(`${this.baseUrl}/${day}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mood }),
     });
-    if (!response.ok) throw new Error("Failed to update mood");
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to update mood");
+    }
+
     return response.json();
   }
 
@@ -56,22 +50,15 @@ class MoodsAPI {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
     });
-    if (!response.ok) throw new Error(`Failed to clear mood for ${day}`);
-    return response.json();
-  }
 
-  /**
-   * Get mood statistics
-   */
-  async getMoodStats(): Promise<MoodStats> {
-    const response = await fetch(`${this.baseUrl}/stats`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
-    if (!response.ok) throw new Error("Failed to fetch mood statistics");
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to clear mood");
+    }
+
     return response.json();
   }
 }
 
 // Create singleton instance
-export const moodsAPI = new MoodsAPI();
+export const daysAPI = new DaysAPI();

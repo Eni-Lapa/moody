@@ -8,71 +8,73 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import { DayOfWeek, MoodType, DayMood } from "@/types/mood.types";
-import { moodsAPI } from "@/app/services/mood.api";
+import { DayOfWeek, MoodType, Day } from "@/types/mood.types";
+import { daysAPI } from "@/app/services/mood.api";
+
 interface MoodContextType {
-  moods: DayMood[];
+  days: Day[];
   isLoading: boolean;
-  updateMood: (day: DayOfWeek, mood: MoodType | null) => Promise<void>;
-  getMoodForDay: (day: DayOfWeek) => MoodType | null;
-  refreshMoods: () => Promise<void>;
+  updateDayMood: (day: DayOfWeek, mood: MoodType) => Promise<void>;
+  refreshDays: () => Promise<void>;
 }
 
 const MoodContext = createContext<MoodContextType | undefined>(undefined);
 
 export function MoodProvider({ children }: { children: ReactNode }) {
-  const [moods, setMoods] = useState<DayMood[]>([]);
+  const [days, setDays] = useState<Day[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch moods from the databaseon mount
-  const refreshMoods = useCallback(async () => {
+  // Log isLoading state whenever it changes
+  useEffect(() => {
+    console.log("[MoodContext] isLoading:", isLoading);
+  }, [isLoading]);
+
+  // Fetch days from the database on mount
+  const refreshDays = useCallback(async () => {
     setIsLoading(true);
+    console.log("[MoodContext] refreshDays: setIsLoading(true)");
     try {
-      const data = await moodsAPI.fetchMoods();
-      setMoods(data.days);
-      console.log("jan marr nga db:", data);
+      const data = await daysAPI.fetchDays();
+      setDays(data);
+      console.log("[MoodContext] refreshDays: setDays", data);
     } catch (error) {
-      console.log("sjan marr vlerat nga db", error);
+      console.log("[MoodContext] refreshDays: error", error);
     } finally {
       setIsLoading(false);
+      console.log("[MoodContext] refreshDays: setIsLoading(false)");
     }
   }, []);
 
   useEffect(() => {
-    refreshMoods();
-  }, [refreshMoods]);
+    console.log("[MoodContext] useEffect: calling refreshDays");
+    refreshDays();
+  }, [refreshDays]);
 
-  // Update mood in the database
-  const updateMood = useCallback(
-    async (day: DayOfWeek, mood: MoodType | null) => {
+  // Update day mood in the database
+  const updateDayMood = useCallback(
+    async (day: DayOfWeek, mood: MoodType) => {
       setIsLoading(true);
+      console.log("[MoodContext] updateDayMood: setIsLoading(true)");
       try {
-        await moodsAPI.updateMood({ day, mood });
-        await refreshMoods(); // Refresh after update
+        // Updated to pass day and request separately
+        await daysAPI.updateMood(day, { mood });
+        await refreshDays(); // Refresh after update
+        console.log("[MoodContext] updateDayMood: mood updated");
       } catch (error) {
-        // Handle error (optional)
+        console.log("[MoodContext] updateDayMood: error", error);
       } finally {
         setIsLoading(false);
+        console.log("[MoodContext] updateDayMood: setIsLoading(false)");
       }
     },
-    [refreshMoods]
-  );
-
-  // Get mood for a specific day
-  const getMoodForDay = useCallback(
-    (day: DayOfWeek): MoodType | null => {
-      const found = moods.find((m) => m.day === day);
-      return found?.mood ?? null;
-    },
-    [moods]
+    [refreshDays]
   );
 
   const value: MoodContextType = {
-    moods,
+    days,
     isLoading,
-    updateMood,
-    getMoodForDay,
-    refreshMoods,
+    updateDayMood,
+    refreshDays,
   };
 
   return <MoodContext.Provider value={value}>{children}</MoodContext.Provider>;

@@ -6,6 +6,8 @@ export type MoodType =
   | "relaxed"
   | "neutral";
 
+export type CurrentMoodType = MoodType | null;
+
 export type DayOfWeek =
   | "monday"
   | "tuesday"
@@ -21,43 +23,17 @@ export interface Mood {
   emoji: string;
 }
 
-export interface DayMood {
+export interface Day {
   day: DayOfWeek;
   mood: MoodType | null;
-}
-
-export interface MoodBoardState {
-  days: DayMood[];
 }
 
 export interface UpdateMoodRequest {
-  day: DayOfWeek;
-  mood: MoodType | null;
+  mood: MoodType;
 }
 
 export interface UpdateMoodResponse {
   success: boolean;
-  data?: DayMood | null;
+  data: Day;
   error?: string;
-}
-
-export interface MoodStats {
-  stats: Array<{
-    mood: string;
-    emoji: string;
-    color: string;
-    count: number;
-  }>;
-  recentChanges: Array<{
-    day: string;
-    previous_mood: string | null;
-    new_mood: string | null;
-    changed_at: string;
-  }>;
-}
-
-export interface DayMoodWithMetadata extends DayMood {
-  emoji?: string | null;
-  color?: string | null;
-  updatedAt?: string | null;
 }
