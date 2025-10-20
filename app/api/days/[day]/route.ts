@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DayOfWeek } from "@/types/mood.types";
 import { DAYS_OF_WEEK } from "@/constants/moods";
-import {
-  getDayId,
-  simulateDelay,
-  updateSelectedDayMood,
-} from "../../lib/helpers";
-import { db } from "../../database";
+import { simulateDelay } from "../../lib/helpers";
+import { db } from "../../lib/db/database";
+import { getDayId, updateSelectedDayMood } from "../../lib/db/queries";
 
 /**
  * Update mood for a specific day

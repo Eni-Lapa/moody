@@ -28,19 +28,18 @@ A Next.js application for tracking daily moods with optimistic UI updates and pe
 # 1. Install dependencies
 npm install
 
-# 2. Initialize database
-npm run db:setup
-
-# 3. Run development server
-npm run dev
+# 2. Start development (auto-initializes database if needed)
+npm run start:dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
 
 ### Production Build
-
 ```bash
-npm run build
+# Build with automatic database initialization
+npm run start:build
+
+# Start production server
 npm start
 ```
 
@@ -55,7 +54,10 @@ moody/
 ├── contexts/             # State management
 ├── constants/            # Mood definitions
 ├── types/                # TypeScript types
-└── scripts/              # Database setup
+├── lib/
+│   ├── db/              # Database queries & connection
+│   └── utils/           # Helper functions
+└── scripts/             # Database & startup scripts
 ```
 
 ## API Endpoints
@@ -73,11 +75,15 @@ moody/
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
+| `npm run start:dev` | **Recommended**: Auto-check DB + start dev server |
+| `npm run start:build` | **Recommended**: Auto-check DB + build for production |
+| `npm run dev` | Start development server only |
+| `npm run build` | Build for production only |
 | `npm start` | Start production server |
-| `npm run db:setup` | Initialize database |
+| `npm run db:init` | Initialize database manually |
+| `npm run db:setup` | Setup database with options |
 | `npm run db:reset` | Reset database |
+| `npm run db:verify` | Verify database status |
 
 ## Key Implementation Details
 
@@ -88,8 +94,13 @@ moody/
 
 **Database Persistence**
 - SQLite stores moods across server restarts
-- Automatic schema creation and seeding
+- Automatic schema creation and seeding on first run
 - ACID-compliant transactions
+
+**Smart Startup Scripts**
+- Automatic database initialization on first run
+- Cross-platform compatibility (Windows, Mac, Linux)
+- No manual setup required for new developers
 
 ## Testing
 
@@ -100,9 +111,9 @@ moody/
 
 ## Troubleshooting
 
-**Database not found**: Run `npm run db:setup`
+**Database not found**: Use `npm run start:dev` (auto-initializes) or manually run `npm run db:init`
 
-**Port 3000 in use**: Set custom port with `PORT=3001 npm run dev`
+**Port 3000 in use**: Set custom port with `PORT=3001 npm run start:dev`
 
 **Build errors**: Delete `.next` and `node_modules`, then reinstall
 

@@ -9,7 +9,10 @@
     "lint": "eslint",
     "db:setup": "tsx scripts/init-db.ts setup",
     "db:reset": "tsx scripts/init-db.ts reset",
-    "db:verify": "tsx scripts/init-db.ts"
+    "db:verify": "tsx scripts/init-db.ts",
+    "db:init": "tsx scripts/init-db.ts",
+    "start:dev": "tsx scripts/start-dev.ts",
+    "start:build": "tsx scripts/start-build.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

@@ -1,5 +1,5 @@
-import { setupDatabase, resetDatabase } from "../app/api/migrations";
-import { db } from "../app/api/database";
+import { setupDatabase, resetDatabase } from "../app/api/lib/db/migrations";
+import { db } from "../app/api/lib/db/database";
 import { MOODS } from "../constants/moods";
 
 const args = process.argv.slice(2);

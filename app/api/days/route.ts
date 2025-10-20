@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAllDays, simulateDelay } from "../lib/helpers";
+import { simulateDelay } from "../lib/helpers";
+import { getAllDays } from "../lib/db/queries";
 
 export async function GET() {
   try {
