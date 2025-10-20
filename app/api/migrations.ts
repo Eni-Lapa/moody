@@ -86,13 +86,13 @@ export const setupDatabase = () => {
   // Check if we need to seed data
   db.get(
     "SELECT COUNT(*) as count FROM days",
-    (err: Error | null, row: any) => {
+    (err: Error | null, row: { count: number } | undefined) => {
       if (err) {
         console.error("Error checking days table:", err.message);
         return;
       }
 
-      if (row.count === 0) {
+      if (row && row.count === 0) {
         console.log("Seeding initial data...");
         seed();
       } else {

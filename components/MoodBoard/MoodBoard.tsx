@@ -7,20 +7,13 @@ import { useMoods } from "@/hooks/use-moods";
 import { MOODS } from "@/constants/moods";
 import { Day, DayOfWeek, MoodType } from "@/types/mood.types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMoodContext } from "@/contexts/MoodContext";
 
 export function MoodBoard() {
-  const { days } = useMoodContext();
-  const { isLoading, updateSelectedDayMood } = useMoods();
+  const { days, isLoading, updateSelectedDayMood, getDisplayMood, isPending } =
+    useMoods();
 
   const [selectedDay, setSelectedDay] = useState<DayOfWeek | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-
-  // Helper function to get the mood for a selected day
-  const getMoodForDay = (day: DayOfWeek) => {
-    const found = days.find((d) => d.day === day);
-    return found?.mood ?? null;
-  };
 
   const handleTileClick = (day: DayOfWeek) => {
     setSelectedDay(day);
@@ -30,6 +23,7 @@ export function MoodBoard() {
   const handleSelectMood = (mood: MoodType) => {
     if (selectedDay) {
       updateSelectedDayMood(selectedDay, mood);
+      setModalOpen(false);
     }
   };
 
@@ -41,7 +35,7 @@ export function MoodBoard() {
           Weekly Mood Tracker
         </h1>
         <p className="text-muted-foreground">
-          Track how you're feeling throughout the week
+          Track how you&apos;re feeling throughout the week
         </p>
       </div>
 
@@ -55,8 +49,9 @@ export function MoodBoard() {
               <MoodTile
                 key={day.day}
                 day={day.day}
-                mood={day.mood}
+                mood={getDisplayMood(day.day)}
                 onClick={() => handleTileClick(day.day)}
+                isPending={isPending(day.day)}
               />
             ))}
       </div>
@@ -64,7 +59,7 @@ export function MoodBoard() {
       {/* Legend */}
       <div className="bg-muted/30 rounded-lg p-4">
         <h3 className="text-sm font-medium mb-3">Mood Legend</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
           {Object.entries(MOODS).map(([key, mood]) => (
             <div key={key} className="flex items-center gap-2">
               <div
@@ -83,7 +78,7 @@ export function MoodBoard() {
         open={modalOpen}
         onOpenChange={setModalOpen}
         onSelectMood={handleSelectMood}
-        currentMood={selectedDay ? getMoodForDay(selectedDay) : null}
+        currentMood={selectedDay ? getDisplayMood(selectedDay) : null}
         dayName={selectedDay || undefined}
       />
     </div>

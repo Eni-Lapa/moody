@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "../../database";
 import { DayOfWeek } from "@/types/mood.types";
 import { DAYS_OF_WEEK } from "@/constants/moods";
-import { getDayId, simulateDelay, updateSelectedDayMood } from "../../lib/helpers";
+import {
+  getDayId,
+  simulateDelay,
+  updateSelectedDayMood,
+} from "../../lib/helpers";
+import { db } from "../../database";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { day: string } }
+  context: { params: Promise<{ day: string }> }
 ) {
   try {
-    const day = params.day.toLowerCase() as DayOfWeek;
+    const { day } = await context.params;
+    const dayLower = day.toLowerCase() as DayOfWeek;
 
-    if (!DAYS_OF_WEEK.includes(day)) {
+    if (!DAYS_OF_WEEK.includes(dayLower)) {
       return NextResponse.json(
         { error: "Invalid day of week" },
         { status: 400 }
@@ -30,16 +35,20 @@ export async function GET(
     `;
 
     const dayMood = await new Promise((resolve, reject) => {
-      db.get(query, [day], (err, row: any) => {
-        if (err) {
-          reject(err);
-          return;
+      db.get(
+        query,
+        [dayLower],
+        (err, row: { day: string; mood: string | null } | undefined) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve({
+            day: row?.day || dayLower,
+            mood: row?.mood || null,
+          });
         }
-        resolve({
-          day: row?.day || day,
-          mood: row?.mood || null,
-        });
-      });
+      );
     });
 
     return NextResponse.json({ data: dayMood });
@@ -54,7 +63,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { day: string } }
+  context: { params: Promise<{ day: string }> }
 ) {
   try {
     const { day } = await context.params;
@@ -86,6 +95,9 @@ export async function PUT(
       );
     }
 
+    // Add artificial delay
+    await simulateDelay();
+
     // Get day ID
     const dayId = await getDayId(dayLower);
     if (!dayId) {
@@ -109,16 +121,20 @@ export async function PUT(
     `;
 
     const updatedMood = await new Promise((resolve, reject) => {
-      db.get(query, [dayId], (err, row: any) => {
-        if (err) {
-          reject(err);
-          return;
+      db.get(
+        query,
+        [dayId],
+        (err, row: { day: string; mood: string | null } | undefined) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve({
+            day: row?.day || dayLower,
+            mood: row?.mood || null,
+          });
         }
-        resolve({
-          day: row?.day || day,
-          mood: row?.mood || null,
-        });
-      });
+      );
     });
 
     return NextResponse.json({
@@ -136,7 +152,7 @@ export async function PUT(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { day: string } }
+  context: { params: Promise<{ day: string }> }
 ) {
-  return PUT(request, { params });
+  return PUT(request, context);
 }

@@ -1,9 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "../database";
-import { Day } from "@/types/mood.types";
+import { NextResponse } from "next/server";
 import { getAllDays, simulateDelay } from "../lib/helpers";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await simulateDelay();
     const days = await getAllDays();

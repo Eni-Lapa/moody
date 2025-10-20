@@ -32,21 +32,21 @@ function verifyDatabase() {
   console.log("\n🔍 Verifying database setup...\n");
 
   // Check days table
-  db.get("SELECT COUNT(*) as count FROM days", (err, row: any) => {
+  db.get("SELECT COUNT(*) as count FROM days", (err, row: { count: number } | undefined) => {
     if (err) {
       console.error("❌ Error checking days table:", err.message);
       return;
     }
-    console.log(`✅ Days table: ${row.count} records`);
+    console.log(`✅ Days table: ${row?.count || 0} records`);
   });
 
   // Check day_moods table
-  db.get("SELECT COUNT(*) as count FROM day_moods", (err, row: any) => {
+  db.get("SELECT COUNT(*) as count FROM day_moods", (err, row: { count: number } | undefined) => {
     if (err) {
       console.error("❌ Error checking day_moods table:", err.message);
       return;
     }
-    console.log(`✅ Day moods table: ${row.count} records`);
+    console.log(`✅ Day moods table: ${row?.count || 0} records`);
   });
 
   // List available moods from frontend constant
@@ -61,7 +61,7 @@ function verifyDatabase() {
      FROM days d 
      LEFT JOIN day_moods dm ON d.id = dm.day_id 
      ORDER BY d.order_index`,
-    (err, rows: any[]) => {
+    (err, rows: { day: string; mood: string | null }[]) => {
       if (err) {
         console.error("❌ Error fetching day moods:", err.message);
         return;

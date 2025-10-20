@@ -15,7 +15,7 @@ export function getDayId(dayName: string): Promise<number | null> {
     db.get(
       "SELECT id FROM days WHERE name = ?",
       [dayName.toLowerCase()],
-      (err, row: any) => {
+      (err, row: { id: number } | undefined) => {
         if (err) reject(err);
         else resolve(row ? row.id : null);
       }
@@ -54,15 +54,15 @@ export function getAllDays(): Promise<Day[]> {
       ORDER BY d.order_index
     `;
 
-    db.all(query, (err, rows: any[]) => {
+    db.all(query, (err, rows: { day: string; mood: string | null }[]) => {
       if (err) {
         reject(err);
         return;
       }
 
       const days: Day[] = rows.map((row) => ({
-        day: row.day,
-        mood: row.mood || null,
+        day: row.day as Day["day"],
+        mood: row.mood as Day["mood"],
       }));
 
       resolve(days);
