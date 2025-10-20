@@ -24,7 +24,10 @@ function getDayId(dayName: string): Promise<number | null> {
 }
 
 // Helper function to update mood
-function updateMood(dayId: number, moodName: string | null): Promise<void> {
+function updateSelectedDayMood(
+  dayId: number,
+  moodName: string | null
+): Promise<void> {
   return new Promise((resolve, reject) => {
     db.run(
       `INSERT INTO day_moods (day_id, mood_name)
@@ -131,7 +134,7 @@ export async function PUT(
     }
 
     // Update the mood (just store the mood name)
-    await updateMood(dayId, mood);
+    await updateSelectedDayMood(dayId, mood);
 
     // Get the updated mood data
     const query = `
@@ -199,7 +202,7 @@ export async function DELETE(
     }
 
     // Clear the mood (set to null)
-    await updateMood(dayId, null);
+    await updateSelectedDayMood(dayId, null);
 
     return NextResponse.json({
       success: true,

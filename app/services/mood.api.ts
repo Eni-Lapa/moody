@@ -22,7 +22,7 @@ class DaysAPI {
   /**
    * Update mood for a specific day
    */
-  async updateMood(
+  async updateSelectedDayMood(
     day: string,
     request: UpdateMoodRequest
   ): Promise<UpdateMoodResponse> {

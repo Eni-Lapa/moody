@@ -6,7 +6,7 @@ import { toast } from "sonner";
 export function useMoods() {
   const { isLoading, updateDayMood: contextUpdateMood } = useMoodContext();
 
-  const updateMood = useCallback(
+  const updateSelectedDayMood = useCallback(
     async (day: DayOfWeek, mood: MoodType) => {
       try {
         await contextUpdateMood(day, mood);
@@ -21,6 +21,6 @@ export function useMoods() {
 
   return {
     isLoading,
-    updateMood,
+    updateSelectedDayMood,
   };
 }

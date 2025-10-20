@@ -4,7 +4,7 @@ import React from "react";
 import { DayOfWeek, MoodType } from "@/types/mood.types";
 import { MOODS } from "@/constants/moods";
 import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
+import { formatDayOfWeek } from "@/lib/utils";
 import { AlertCircle, Loader2, Plus } from "lucide-react";
 
 interface MoodTileProps {
@@ -13,7 +13,6 @@ interface MoodTileProps {
   onClick: () => void;
   isPending?: boolean;
   error?: string | null;
-  isLoading?: boolean;
 }
 
 export function MoodTile({
@@ -22,13 +21,9 @@ export function MoodTile({
   onClick,
   isPending = false,
   error,
-  isLoading = false,
 }: MoodTileProps) {
   const moodData = mood ? MOODS[mood] : null;
-
-  if (isLoading) {
-    return <Skeleton className="h-[140px] rounded-xl" />;
-  }
+  const formattedDay = formatDayOfWeek(day);
 
   return (
     <button
@@ -48,7 +43,7 @@ export function MoodTile({
         backgroundColor: moodData && !error ? moodData.color : undefined,
         borderColor: moodData && !error ? moodData.color : undefined,
       }}
-      aria-label={`${day} mood: ${mood || "not set"}`}
+      aria-label={`${formattedDay} mood: ${mood || "not set"}`}
       aria-busy={isPending}
     >
       {/* Day label */}
@@ -58,7 +53,7 @@ export function MoodTile({
           moodData ? "text-white/90" : "text-foreground"
         )}
       >
-        {day}
+        {formattedDay}
       </div>
 
       {/* Mood emoji */}
@@ -97,7 +92,7 @@ export function MoodTile({
         </div>
       )}
 
-      {/* Hover effect for empty tiles */}
+      {/* Hover effect for no set mood day tiles */}
       {!moodData && !error && (
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity" />
       )}

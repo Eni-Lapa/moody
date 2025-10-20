@@ -11,7 +11,7 @@ import { useMoodContext } from "@/contexts/MoodContext";
 
 export function MoodBoard() {
   const { days } = useMoodContext();
-  const { isLoading, updateMood } = useMoods();
+  const { isLoading, updateSelectedDayMood } = useMoods();
 
   const [selectedDay, setSelectedDay] = useState<DayOfWeek | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -29,7 +29,7 @@ export function MoodBoard() {
 
   const handleSelectMood = (mood: MoodType) => {
     if (selectedDay) {
-      updateMood(selectedDay, mood);
+      updateSelectedDayMood(selectedDay, mood);
     }
   };
 
@@ -49,7 +49,7 @@ export function MoodBoard() {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
         {isLoading
           ? Array.from({ length: 7 }).map((_, idx) => (
-              <Skeleton key={idx} className="h-[140px] rounded-xl" />
+              <Skeleton key={idx} className="aspect-square w-full rounded-xl" />
             ))
           : days.map((day: Day) => (
               <MoodTile
@@ -57,7 +57,6 @@ export function MoodBoard() {
                 day={day.day}
                 mood={day.mood}
                 onClick={() => handleTileClick(day.day)}
-                isPending={isLoading}
               />
             ))}
       </div>
