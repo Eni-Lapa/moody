@@ -94,97 +94,98 @@ export function MoodProvider({ children }: { children: ReactNode }) {
   );
 
   // Update mood with optimistic UI
-  const updateDayMood = useCallback(
-    async (day: DayOfWeek, mood: MoodType) => {
-      // Generate unique timestamp for this request to handle out-of-order responses
-      const requestTimestamp = Date.now();
+  const updateDayMood = useCallback(async (day: DayOfWeek, mood: MoodType) => {
+    // Generate unique timestamp for this request to handle out-of-order responses
+    const requestTimestamp = Date.now();
 
-      // IMMEDIATE optimistic update (user sees change instantly)
-      setOptimisticUpdates((prev) => ({
-        ...prev,
-        [day]: { mood, timestamp: requestTimestamp },
-      }));
+    // IMMEDIATE optimistic update (user sees change instantly)
+    setOptimisticUpdates((prev) => ({
+      ...prev,
+      [day]: { mood, timestamp: requestTimestamp },
+    }));
 
-      // Track this as a pending request
-      setPendingRequests((prev) => ({
-        ...prev,
-        [day]: requestTimestamp,
-      }));
+    // Track this as a pending request
+    setPendingRequests((prev) => ({
+      ...prev,
+      [day]: requestTimestamp,
+    }));
 
-      // Show loading toast for slow requests (after 1 second)
-      const loadingToastTimeout = setTimeout(() => {
-        toast.loading(`Saving ${day} mood...`, { id: `loading-${day}` });
-      }, 1000);
+    // Show loading toast for slow requests (after 1 second)
+    const loadingToastTimeout = setTimeout(() => {
+      toast.loading(`Saving ${formatDayOfWeek(day)} mood...`, {
+        id: `loading-${day}`,
+      });
+    }, 1000);
 
-      try {
-        // Fire server update in the background
-        const response = await daysAPI.updateSelectedDayMood(day, { mood });
+    try {
+      // Fire server update in the background
+      const response = await daysAPI.updateSelectedDayMood(day, { mood });
 
-        // Clear loading toast if it was shown
-        clearTimeout(loadingToastTimeout);
-        toast.dismiss(`loading-${day}`);
+      // Clear loading toast if it was shown
+      clearTimeout(loadingToastTimeout);
+      toast.dismiss(`loading-${day}`);
 
-        // Reconcile when server responds (only if this is still the latest request)
-        setPendingRequests((prev) => {
-          // If this request timestamp matches the current pending request, it's the latest
-          if (prev[day] === requestTimestamp) {
-            // Remove from pending
-            const newPending = { ...prev };
-            delete newPending[day];
-            return newPending;
-          }
-          // Otherwise, a newer request is in flight, ignore this response
-          return prev;
-        });
-
-        // Update with authoritative server data (server wins)
-        setDays((currentDays) => {
-          return currentDays.map((d) =>
-            d.day === day ? { ...d, mood: response.data.mood } : d
-          );
-        });
-
-        // Clear optimistic update for this day
-        setOptimisticUpdates((prev) => {
-          const newOptimistic = { ...prev };
-          delete newOptimistic[day];
-          return newOptimistic;
-        });
-
-        // Success feedback
-        toast.success(`${day} mood updated!`, { duration: 2000 });
-      } catch (error) {
-        console.error("[MoodContext] updateDayMood: error", error);
-
-        // Clear loading toast if it was shown
-        clearTimeout(loadingToastTimeout);
-        toast.dismiss(`loading-${day}`);
-
-        // Remove from pending on error
-        setPendingRequests((prev) => {
+      // Reconcile when server responds (only if this is still the latest request)
+      setPendingRequests((prev) => {
+        // If this request timestamp matches the current pending request, it's the latest
+        if (prev[day] === requestTimestamp) {
+          // Remove from pending
           const newPending = { ...prev };
           delete newPending[day];
           return newPending;
-        });
+        }
+        // Otherwise, a newer request is in flight, ignore this response
+        return prev;
+      });
 
-        // Clear optimistic update (revert to server state)
-        setOptimisticUpdates((prev) => {
-          const newOptimistic = { ...prev };
-          delete newOptimistic[day];
-          return newOptimistic;
-        });
+      // Update with authoritative server data (server wins)
+      setDays((currentDays) => {
+        return currentDays.map((d) =>
+          d.day === day ? { ...d, mood: response.data.mood } : d
+        );
+      });
 
-        // Show error toast (non-blocking) with more helpful message
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error occurred";
-        toast.error(`Failed to update ${day} mood`, {
-          description: errorMessage,
-          duration: 4000,
-        });
-      }
-    },
-    [days]
-  );
+      // Clear optimistic update for this day
+      setOptimisticUpdates((prev) => {
+        const newOptimistic = { ...prev };
+        delete newOptimistic[day];
+        return newOptimistic;
+      });
+
+      // Success feedback
+      toast.success(`${formatDayOfWeek(day)} mood updated!`, {
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error("[MoodContext] updateDayMood: error", error);
+
+      // Clear loading toast if it was shown
+      clearTimeout(loadingToastTimeout);
+      toast.dismiss(`loading-${day}`);
+
+      // Remove from pending on error
+      setPendingRequests((prev) => {
+        const newPending = { ...prev };
+        delete newPending[day];
+        return newPending;
+      });
+
+      // Clear optimistic update (revert to server state)
+      setOptimisticUpdates((prev) => {
+        const newOptimistic = { ...prev };
+        delete newOptimistic[day];
+        return newOptimistic;
+      });
+
+      // Show error toast (non-blocking) with more helpful message
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      toast.error(`Failed to update ${formatDayOfWeek(day)} mood`, {
+        description: errorMessage,
+        duration: 4000,
+      });
+    }
+  }, []);
 
   const value: MoodContextType = {
     days,

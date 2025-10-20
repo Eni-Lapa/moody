@@ -8,59 +8,10 @@ import {
 } from "../../lib/helpers";
 import { db } from "../../database";
 
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ day: string }> }
-) {
-  try {
-    const { day } = await context.params;
-    const dayLower = day.toLowerCase() as DayOfWeek;
-
-    if (!DAYS_OF_WEEK.includes(dayLower)) {
-      return NextResponse.json(
-        { error: "Invalid day of week" },
-        { status: 400 }
-      );
-    }
-
-    await simulateDelay();
-
-    const query = `
-      SELECT 
-        d.name as day,
-        dm.mood_name as mood
-      FROM days d
-      LEFT JOIN day_moods dm ON d.id = dm.day_id
-      WHERE d.name = ?
-    `;
-
-    const dayMood = await new Promise((resolve, reject) => {
-      db.get(
-        query,
-        [dayLower],
-        (err, row: { day: string; mood: string | null } | undefined) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve({
-            day: row?.day || dayLower,
-            mood: row?.mood || null,
-          });
-        }
-      );
-    });
-
-    return NextResponse.json({ data: dayMood });
-  } catch (error) {
-    console.error("Error fetching mood:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch mood" },
-      { status: 500 }
-    );
-  }
-}
-
+/**
+ * Update mood for a specific day
+ * PUT/PATCH /api/days/:day
+ */
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ day: string }> }
@@ -69,6 +20,7 @@ export async function PUT(
     const { day } = await context.params;
     const dayLower = day.toLowerCase() as DayOfWeek;
 
+    // Validate day of week
     if (!DAYS_OF_WEEK.includes(dayLower)) {
       return NextResponse.json(
         { error: "Invalid day of week" },
@@ -79,7 +31,7 @@ export async function PUT(
     const body = await request.json();
     const { mood } = body;
 
-    // Validate mood is one of the allowed types
+    // Validate mood type
     const validMoods = [
       "happy",
       "tired",
@@ -95,10 +47,10 @@ export async function PUT(
       );
     }
 
-    // Add artificial delay
+    // Simulate server lag (300-1200ms)
     await simulateDelay();
 
-    // Get day ID
+    // Get day ID from database
     const dayId = await getDayId(dayLower);
     if (!dayId) {
       return NextResponse.json(
@@ -107,10 +59,10 @@ export async function PUT(
       );
     }
 
-    // Update the mood (just store the mood name)
+    // Update the mood
     await updateSelectedDayMood(dayId, mood);
 
-    // Get the updated mood data
+    // Fetch and return updated mood data
     const query = `
       SELECT 
         d.name as day,
@@ -150,6 +102,9 @@ export async function PUT(
   }
 }
 
+/**
+ * PATCH is an alias for PUT for this endpoint
+ */
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ day: string }> }

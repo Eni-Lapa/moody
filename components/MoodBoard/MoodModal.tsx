@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MOODS } from "@/constants/moods";
-import { MoodType } from "@/types/mood.types";
+import { formatDayOfWeek } from "@/lib/utils";
+import { MoodType, DayOfWeek } from "@/types/mood.types";
 import { Check } from "lucide-react";
 
 interface MoodModalProps {
@@ -37,7 +38,10 @@ export function MoodModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>How are you feeling on {dayName}?</DialogTitle>
+          <DialogTitle>
+            How are you feeling on{" "}
+            {dayName ? formatDayOfWeek(dayName as DayOfWeek) : "today"}?
+          </DialogTitle>
           <DialogDescription>
             Select a mood that best represents your day
           </DialogDescription>

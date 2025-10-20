@@ -32,26 +32,32 @@ function verifyDatabase() {
   console.log("\n🔍 Verifying database setup...\n");
 
   // Check days table
-  db.get("SELECT COUNT(*) as count FROM days", (err, row: { count: number } | undefined) => {
-    if (err) {
-      console.error("❌ Error checking days table:", err.message);
-      return;
+  db.get(
+    "SELECT COUNT(*) as count FROM days",
+    (err, row: { count: number } | undefined) => {
+      if (err) {
+        console.error("❌ Error checking days table:", err.message);
+        return;
+      }
+      console.log(`✅ Days table: ${row?.count || 0} records`);
     }
-    console.log(`✅ Days table: ${row?.count || 0} records`);
-  });
+  );
 
   // Check day_moods table
-  db.get("SELECT COUNT(*) as count FROM day_moods", (err, row: { count: number } | undefined) => {
-    if (err) {
-      console.error("❌ Error checking day_moods table:", err.message);
-      return;
+  db.get(
+    "SELECT COUNT(*) as count FROM day_moods",
+    (err, row: { count: number } | undefined) => {
+      if (err) {
+        console.error("❌ Error checking day_moods table:", err.message);
+        return;
+      }
+      console.log(`✅ Day moods table: ${row?.count || 0} records`);
     }
-    console.log(`✅ Day moods table: ${row?.count || 0} records`);
-  });
+  );
 
   // List available moods from frontend constant
   console.log("\n📊 Available moods (from frontend):");
-  Object.entries(MOODS).forEach(([key, mood]) => {
+  Object.entries(MOODS).forEach(([_, mood]) => {
     console.log(`   ${mood.emoji} ${mood.type}`);
   });
 
