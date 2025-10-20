@@ -1,46 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../database";
-import { DayOfWeek, MoodType } from "@/types/mood.types";
+import { DayOfWeek } from "@/types/mood.types";
 import { DAYS_OF_WEEK } from "@/constants/moods";
-
-// Simulate server delay
-async function simulateDelay() {
-  const delay = Math.floor(Math.random() * (600 - 200 + 1)) + 200;
-  await new Promise((resolve) => setTimeout(resolve, delay));
-}
-
-// Helper function to get day ID
-function getDayId(dayName: string): Promise<number | null> {
-  return new Promise((resolve, reject) => {
-    db.get(
-      "SELECT id FROM days WHERE name = ?",
-      [dayName.toLowerCase()],
-      (err, row: any) => {
-        if (err) reject(err);
-        else resolve(row ? row.id : null);
-      }
-    );
-  });
-}
-
-// Helper function to update mood
-function updateSelectedDayMood(
-  dayId: number,
-  moodName: string | null
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    db.run(
-      `INSERT INTO day_moods (day_id, mood_name)
-       VALUES (?, ?)
-       ON CONFLICT(day_id) DO UPDATE SET mood_name = excluded.mood_name`,
-      [dayId, moodName],
-      (err) => {
-        if (err) reject(err);
-        else resolve();
-      }
-    );
-  });
-}
+import { getDayId, simulateDelay, updateSelectedDayMood } from "../../lib/helpers";
 
 export async function GET(
   request: NextRequest,
@@ -177,42 +139,4 @@ export async function PATCH(
   { params }: { params: { day: string } }
 ) {
   return PUT(request, { params });
-}
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { day: string } }
-) {
-  try {
-    const day = params.day.toLowerCase() as DayOfWeek;
-
-    if (!DAYS_OF_WEEK.includes(day)) {
-      return NextResponse.json(
-        { error: "Invalid day of week" },
-        { status: 400 }
-      );
-    }
-
-    const dayId = await getDayId(day);
-    if (!dayId) {
-      return NextResponse.json(
-        { error: "Day not found in database" },
-        { status: 404 }
-      );
-    }
-
-    // Clear the mood (set to null)
-    await updateSelectedDayMood(dayId, null);
-
-    return NextResponse.json({
-      success: true,
-      message: `Mood cleared for ${day}`,
-    });
-  } catch (error) {
-    console.error("Error deleting mood:", error);
-    return NextResponse.json(
-      { error: "Failed to delete mood" },
-      { status: 500 }
-    );
-  }
 }
