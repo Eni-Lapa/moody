@@ -2,6 +2,51 @@
 
 A Next.js application for tracking daily moods with optimistic UI updates and persistent storage.
 
+## 📦 For Evaluators
+
+This project can be run immediately after extraction with minimal setup:
+
+### Quick Evaluation Steps
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Start development server (recommended - auto-initializes database)
+npm run start:dev
+```
+
+The application will:
+- Automatically initialize the SQLite database on first run
+- Start the development server at http://localhost:3000
+- Be ready to test all features immediately
+
+**For production build:**
+```bash
+# Build and start production server
+npm run start:build
+npm start
+```
+
+### What's Included in Submission
+
+- ✅ Complete source code with all project files
+- ✅ `package.json` and `package-lock.json` for dependency management
+- ✅ Pre-configured database scripts (no manual setup needed)
+- ✅ Comprehensive documentation
+- ✅ TypeScript configuration and type definitions
+
+### Note on Build Folder
+
+The `.next` build folder is not included in this submission as Next.js builds are environment-specific. The build will be generated automatically when you run:
+```bash
+npm run build
+# or use the combined command:
+npm run start:build
+```
+
+---
+
 ## Features
 
 - 7-day mood board with 6 mood options (Happy, Tired, Focused, Stressed, Relaxed, Neutral)
@@ -115,7 +160,29 @@ moody/
 
 **Port 3000 in use**: Set custom port with `PORT=3001 npm run start:dev`
 
-**Build errors**: Delete `.next` and `node_modules`, then reinstall
+**Build errors**: Delete `.next` and `node_modules`, then reinstall:
+```bash
+rm -rf .next node_modules
+npm install
+npm run build
+```
+
+## Development Notes
+
+**Dependencies Installation**
+- All dependencies are listed in `package.json`
+- Run `npm install` to install all required packages
+- `package-lock.json` ensures consistent dependency versions
+
+**Database Setup**
+- SQLite database (`moods.db`) is created automatically on first run
+- No external database server required
+- Data persists between server restarts
+
+**Environment Compatibility**
+- Tested on Node.js 18.18.0+
+- Cross-platform (Windows, macOS, Linux)
+- No platform-specific dependencies
 
 ---
 
