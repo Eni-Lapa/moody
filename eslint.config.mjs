@@ -20,12 +20,6 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
-  {
-    rules: {
-      // Disable problematic rules that may cause issues with structuredClone
-      "react/display-name": "off",
-    },
-  },
 ];
 
 export default eslintConfig;
