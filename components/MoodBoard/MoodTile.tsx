@@ -26,12 +26,10 @@ export function MoodTile({
   return (
     <button
       onClick={onClick}
-      disabled={isPending}
       className={cn(
         "relative group flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all duration-300",
         "hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary",
         "min-h-[140px] cursor-pointer",
-        "disabled:cursor-wait",
         moodData
           ? "border-transparent shadow-lg"
           : "border-border hover:border-primary/50 bg-card"
@@ -77,20 +75,12 @@ export function MoodTile({
       )}
 
       {/* Empty state */}
-      {!moodData && !isPending && (
+      {!moodData && (
         <div className="flex flex-col items-center gap-2 text-muted-foreground">
           <div className="w-12 h-12 rounded-full border-2 border-dashed border-border flex items-center justify-center group-hover:border-primary transition-colors">
             <Plus className="h-5 w-5" />
           </div>
           <span className="text-xs">Set mood</span>
-        </div>
-      )}
-
-      {/* Loading state for empty tiles */}
-      {!moodData && isPending && (
-        <div className="flex flex-col items-center gap-2 text-primary">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="text-xs font-medium">Updating...</span>
         </div>
       )}
 

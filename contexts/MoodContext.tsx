@@ -5,6 +5,7 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useRef,
   ReactNode,
   useEffect,
 } from "react";
@@ -13,15 +14,12 @@ import { moodApi } from "@/app/services/mood.api";
 import { toast } from "sonner";
 import { formatDayOfWeek } from "@/lib/utils";
 
-interface OptimisticUpdate {
-  mood: MoodType;
-  timestamp: number;
-}
+type MoodByDay = Partial<Record<DayOfWeek, MoodType>>;
 
 interface MoodContextType {
   days: Day[];
   isLoading: boolean;
-  updateDayMood: (day: DayOfWeek, mood: MoodType) => Promise<void>;
+  updateDayMood: (day: DayOfWeek, mood: MoodType) => void;
   refreshDays: () => Promise<void>;
   getDisplayMood: (day: DayOfWeek) => MoodType | null;
   isPending: (day: DayOfWeek) => boolean;
@@ -29,21 +27,26 @@ interface MoodContextType {
 
 const MoodContext = createContext<MoodContextType | undefined>(undefined);
 
+function without(moods: MoodByDay, day: DayOfWeek): MoodByDay {
+  const rest = { ...moods };
+  delete rest[day];
+  return rest;
+}
+
 export function MoodProvider({ children }: { children: ReactNode }) {
+  // What the server has confirmed
   const [days, setDays] = useState<Day[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Optimistic updates: stores temporary mood changes before server confirms
-  const [optimisticUpdates, setOptimisticUpdates] = useState<
-    Partial<Record<DayOfWeek, OptimisticUpdate>>
-  >({});
+  // Moods the user picked that are not saved yet; shown instead of server data
+  const [unsaved, setUnsaved] = useState<MoodByDay>({});
 
-  // Pending requests: tracks which requests are in-flight to handle out-of-order responses
-  const [pendingRequests, setPendingRequests] = useState<
-    Partial<Record<DayOfWeek, number>>
-  >({});
+  // At most one request per day is in flight. A choice made while it is in
+  // flight is kept here and sent when that request finishes, so the server
+  // always ends up with the user's latest choice, whatever the response order.
+  const inFlight = useRef(new Set<DayOfWeek>());
+  const nextChoice = useRef<MoodByDay>({});
 
-  // Fetch days from the database on mount
   const refreshDays = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -70,122 +73,62 @@ export function MoodProvider({ children }: { children: ReactNode }) {
     refreshDays();
   }, [refreshDays]);
 
-  // Get the mood to display: optimistic update takes precedence over server data
   const getDisplayMood = useCallback(
-    (day: DayOfWeek): MoodType | null => {
-      // If there's an optimistic update, show that
-      if (optimisticUpdates[day]) {
-        return optimisticUpdates[day].mood;
-      }
-
-      // Otherwise show server data
-      const serverDay = days.find((d) => d.day === day);
-      return serverDay?.mood ?? null;
-    },
-    [days, optimisticUpdates]
+    (day: DayOfWeek): MoodType | null =>
+      unsaved[day] ?? days.find((d) => d.day === day)?.mood ?? null,
+    [days, unsaved]
   );
 
-  // Check if a day has a pending update
   const isPending = useCallback(
-    (day: DayOfWeek): boolean => {
-      return !!pendingRequests[day];
-    },
-    [pendingRequests]
+    (day: DayOfWeek): boolean => unsaved[day] !== undefined,
+    [unsaved]
   );
 
-  // Update mood with optimistic UI
-  const updateDayMood = useCallback(async (day: DayOfWeek, mood: MoodType) => {
-    // Generate unique timestamp for this request to handle out-of-order responses
-    const requestTimestamp = Date.now();
+  const saveLatestChoice = useCallback(async (day: DayOfWeek) => {
+    inFlight.current.add(day);
+    let lastError: unknown = null;
 
-    // IMMEDIATE optimistic update (user sees change instantly)
-    setOptimisticUpdates((prev) => ({
-      ...prev,
-      [day]: { mood, timestamp: requestTimestamp },
-    }));
+    let mood = nextChoice.current[day];
+    while (mood !== undefined) {
+      nextChoice.current = without(nextChoice.current, day);
+      try {
+        const { data } = await moodApi.updateMood(day, mood);
+        setDays((current) => current.map((d) => (d.day === day ? data : d)));
+        lastError = null;
+      } catch (error) {
+        lastError = error;
+      }
+      mood = nextChoice.current[day];
+    }
 
-    // Track this as a pending request
-    setPendingRequests((prev) => ({
-      ...prev,
-      [day]: requestTimestamp,
-    }));
+    inFlight.current.delete(day);
+    // Show server data again: the saved mood, or the previous one if the
+    // latest save failed (rollback)
+    setUnsaved((current) => without(current, day));
 
-    // Show loading toast for slow requests (after 1 second)
-    const loadingToastTimeout = setTimeout(() => {
-      toast.loading(`Saving ${formatDayOfWeek(day)} mood...`, {
-        id: `loading-${day}`,
-      });
-    }, 1000);
-
-    try {
-      // Fire server update in the background
-      const response = await moodApi.updateMood(day, mood);
-
-      // Clear loading toast if it was shown
-      clearTimeout(loadingToastTimeout);
-      toast.dismiss(`loading-${day}`);
-
-      // Reconcile when server responds (only if this is still the latest request)
-      setPendingRequests((prev) => {
-        // If this request timestamp matches the current pending request, it's the latest
-        if (prev[day] === requestTimestamp) {
-          // Remove from pending
-          const newPending = { ...prev };
-          delete newPending[day];
-          return newPending;
-        }
-        // Otherwise, a newer request is in flight, ignore this response
-        return prev;
-      });
-
-      // Update with authoritative server data (server wins)
-      setDays((currentDays) => {
-        return currentDays.map((d) =>
-          d.day === day ? { ...d, mood: response.data.mood } : d
-        );
-      });
-
-      // Clear optimistic update for this day
-      setOptimisticUpdates((prev) => {
-        const newOptimistic = { ...prev };
-        delete newOptimistic[day];
-        return newOptimistic;
-      });
-
-      // Success feedback
-      toast.success(`${formatDayOfWeek(day)} mood updated!`, {
-        duration: 2000,
-      });
-    } catch (error) {
-      console.error("[MoodContext] updateDayMood: error", error);
-
-      // Clear loading toast if it was shown
-      clearTimeout(loadingToastTimeout);
-      toast.dismiss(`loading-${day}`);
-
-      // Remove from pending on error
-      setPendingRequests((prev) => {
-        const newPending = { ...prev };
-        delete newPending[day];
-        return newPending;
-      });
-
-      // Clear optimistic update (revert to server state)
-      setOptimisticUpdates((prev) => {
-        const newOptimistic = { ...prev };
-        delete newOptimistic[day];
-        return newOptimistic;
-      });
-
-      // Show error toast (non-blocking) with more helpful message
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
+    if (lastError) {
+      console.error("[MoodContext] updateDayMood: error", lastError);
       toast.error(`Failed to update ${formatDayOfWeek(day)} mood`, {
-        description: errorMessage,
+        description:
+          lastError instanceof Error
+            ? lastError.message
+            : "Unknown error occurred",
         duration: 4000,
       });
     }
   }, []);
+
+  const updateDayMood = useCallback(
+    (day: DayOfWeek, mood: MoodType) => {
+      setUnsaved((current) => ({ ...current, [day]: mood }));
+      nextChoice.current = { ...nextChoice.current, [day]: mood };
+
+      if (!inFlight.current.has(day)) {
+        void saveLatestChoice(day);
+      }
+    },
+    [saveLatestChoice]
+  );
 
   const value: MoodContextType = {
     days,
