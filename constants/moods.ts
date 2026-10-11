@@ -43,12 +43,12 @@ export const DAYS_OF_WEEK: DayOfWeek[] = [
   "sunday",
 ];
 
-export const DAY_ABBREVIATIONS: Record<DayOfWeek, string> = {
-  monday: "Mon",
-  tuesday: "Tue",
-  wednesday: "Wed",
-  thursday: "Thu",
-  friday: "Fri",
-  saturday: "Sat",
-  sunday: "Sun",
-};
+export const MOOD_TYPES = Object.keys(MOODS) as MoodType[];
+
+export function isMoodType(value: unknown): value is MoodType {
+  return typeof value === "string" && MOOD_TYPES.includes(value as MoodType);
+}
+
+export function isDayOfWeek(value: string): value is DayOfWeek {
+  return DAYS_OF_WEEK.includes(value as DayOfWeek);
+}
