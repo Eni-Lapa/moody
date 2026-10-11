@@ -1,189 +1,98 @@
-# Weekly Mood Tracker
+# Moody
 
-A Next.js application for tracking daily moods with optimistic UI updates and persistent storage.
+![CI](https://github.com/Eni-Lapa/moody/actions/workflows/ci.yml/badge.svg)
 
-## 📦 For Evaluators
+A weekly mood board built with Next.js and React. Pick a mood for each day: the tile changes instantly while the choice is saved to a deliberately slow API in the background, and if the save fails, the tile rolls back and tells you why.
 
-This project can be run immediately after extraction with minimal setup:
+![The mood board with five days filled in](docs/board.png)
 
-### Quick Evaluation Steps
+Next.js 15 (App Router) · React 19 · TypeScript (strict) · Tailwind CSS 4 · Radix UI · SQLite · Vitest + Testing Library
+
+## Why I built this
+
+This started as a small Next.js exercise, and I kept working on it because the part of frontend work I find most interesting is what happens between a click and the server's answer. The API here waits up to a second on every request on purpose. The board still has to feel instant, never end up showing a value the server doesn't have, and say clearly when something goes wrong.
+
+I used an AI coding assistant while reworking it, like most people do now. I reviewed every change and can walk you through any file.
+
+## Quick start
+
+Requires Node 22 (see `.nvmrc`).
 
 ```bash
-# 1. Install dependencies
 npm install
-
-# 2. Start development server (recommended - auto-initializes database)
-npm run start:dev
+npm run dev
 ```
 
-The application will:
-- Automatically initialize the SQLite database on first run
-- Start the development server at http://localhost:3000
-- Be ready to test all features immediately
+Open [http://localhost:3000](http://localhost:3000). The SQLite database (`moods.db`) is created on first run; delete the file to start over.
 
-**For production build:**
-```bash
-# Build and start production server
-npm run start:build
-npm start
-```
+For a production build: `npm run build`, then `npm start`.
 
-### What's Included in Submission
+## How it works
 
-- ✅ Complete source code with all project files
-- ✅ `package.json` and `package-lock.json` for dependency management
-- ✅ Pre-configured database scripts (no manual setup needed)
-- ✅ Comprehensive documentation
-- ✅ TypeScript configuration and type definitions
+- **Optimistic updates.** Choosing a mood updates the tile immediately. A spinner on the tile shows that the save is still in flight.
+- **The latest choice wins.** Each day has at most one request in flight. If you change your mind while it is saving, the newest choice waits and is sent when that request finishes. Responses can't arrive out of order, so the server always ends up with what you picked last. Choices you made in between are skipped.
+- **Rollback.** If the final save fails, the tile goes back to the last saved mood and a toast explains what went wrong.
+- **Validation on the server.** The API accepts only known days and moods, checked against the same constants the UI uses. Anything else, including malformed JSON, is a `400`.
+- **Slow on purpose.** Every API call waits 300–1200 ms (`app/api/lib/helpers.ts`), so all of the above is visible.
+- **Accessible.** The board works with Tab, Enter and Esc, and Radix handles focus in the dialog. Tiles announce their mood and busy state, the picker marks the current mood with `aria-pressed`, and every label colour meets WCAG AA contrast, which a test checks.
 
-### Note on Build Folder
+The save logic lives in [`contexts/MoodContext.tsx`](contexts/MoodContext.tsx), next to the server state it updates.
 
-The `.next` build folder is not included in this submission as Next.js builds are environment-specific. The build will be generated automatically when you run:
-```bash
-npm run build
-# or use the combined command:
-npm run start:build
-```
+![Choosing a mood for Saturday](docs/mood-picker.png)
 
----
+## API
 
-## Features
+| Method          | Path             | Body                  | Response                                         |
+| --------------- | ---------------- | --------------------- | ------------------------------------------------ |
+| `GET`           | `/api/days`      |                       | The week, Monday to Sunday                       |
+| `PUT` / `PATCH` | `/api/days/:day` | `{ "mood": "happy" }` | `{ "success": true, "data": { "day", "mood" } }` |
 
-- 7-day mood board with 6 mood options (Happy, Tired, Focused, Stressed, Relaxed, Neutral)
-- Optimistic UI with instant feedback
-- SQLite database persistence
-- Keyboard accessible (Tab, Enter, Esc)
-- Responsive design
+Moods: `happy`, `tired`, `focused`, `stressed`, `relaxed`, `neutral`. The day is case-insensitive. Invalid input returns `400` with `{ "error": "..." }`.
 
-## Tech Stack
-
-- Next.js 15 (App Router) + TypeScript
-- Tailwind CSS + Radix UI
-- SQLite database
-- React Context for state management
-
-## Quick Start
-
-### Prerequisites
-- Node.js 18.18.0 or higher
-
-### Installation & Setup
+## Tests
 
 ```bash
-# 1. Install dependencies
-npm install
-
-# 2. Start development (auto-initializes database if needed)
-npm run start:dev
+npm test             # Vitest
+npm run lint         # ESLint, fails on warnings
+npm run typecheck
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+30 tests:
 
-### Production Build
-```bash
-# Build with automatic database initialization
-npm run start:build
+- **Components** (`MoodTile`, `MoodModal`, `MoodBoard`) through Testing Library, from the user's side, including keyboard-only use.
+- **`MoodContext`**: optimistic display, one request per day at a time, the latest choice winning, rollback with an error toast, and retry when loading fails. The tests decide when each fake response arrives, so the ordering cases are deterministic.
+- **API routes** against a real in-memory SQLite database.
+- **Colour contrast** of every mood's label.
 
-# Start production server
-npm start
+CI runs lint, typecheck, tests and the production build on every push to `main` and every pull request.
+
+## Project structure
+
+```text
+app/
+  page.tsx, layout.tsx, providers.tsx
+  api/days/route.ts           GET /api/days
+  api/days/[day]/route.ts     PUT/PATCH /api/days/:day
+  api/lib/db/                 SQLite connection, schema and queries
+  api/lib/helpers.ts          the artificial latency
+  services/mood.api.ts        typed fetch client
+components/
+  MoodBoard/                  board, tile and mood picker
+  ui/                         shadcn/ui primitives
+contexts/MoodContext.tsx      server state, optimistic updates, save queue
+constants/moods.ts            moods, colours, days and type guards
+types/mood.types.ts
+tests/                        Vitest + Testing Library
 ```
 
-## Project Structure
+## Limitations and next steps
 
-```
-moody/
-├── app/
-│   ├── api/              # API routes & database
-│   └── services/         # API client
-├── components/           # React components
-├── contexts/             # State management
-├── constants/            # Mood definitions
-├── types/                # TypeScript types
-├── lib/
-│   ├── db/              # Database queries & connection
-│   └── utils/           # Helper functions
-└── scripts/             # Database & startup scripts
-```
+- **One week, no dates.** Monday to Sunday are fixed rows, so this is a board, not a history. The next step would be entries per date with week navigation.
+- **One user.** There are no accounts.
+- **One tab.** "The latest choice wins" holds within a browser tab. Two tabs editing the same day could still overwrite each other; the server would need a version per day to reject stale writes.
+- **One server.** SQLite on local disk means it runs as a single Node process, not on serverless hosting.
+- **No end-to-end tests yet.** The next addition would be a Playwright test of the slow-network and failure flows in a real browser.
 
-## API Endpoints
+## License
 
-**GET `/api/days`** - Fetch all days with moods
-
-**PUT/PATCH `/api/days/:day`** - Update mood for a day
-```json
-{ "mood": "happy" }
-```
-
-*Note: API includes 300-1200ms artificial latency for testing.*
-
-## Available Commands
-
-| Command | Description |
-|---------|-------------|
-| `npm run start:dev` | **Recommended**: Auto-check DB + start dev server |
-| `npm run start:build` | **Recommended**: Auto-check DB + build for production |
-| `npm run dev` | Start development server only |
-| `npm run build` | Build for production only |
-| `npm start` | Start production server |
-| `npm run db:init` | Initialize database manually |
-| `npm run db:setup` | Setup database with options |
-| `npm run db:reset` | Reset database |
-| `npm run db:verify` | Verify database status |
-
-## Key Implementation Details
-
-**Optimistic UI Pattern**
-- Instant UI updates while syncing in background
-- Timestamp-based race condition handling
-- Automatic error recovery with rollback
-
-**Database Persistence**
-- SQLite stores moods across server restarts
-- Automatic schema creation and seeding on first run
-- ACID-compliant transactions
-
-**Smart Startup Scripts**
-- Automatic database initialization on first run
-- Cross-platform compatibility (Windows, Mac, Linux)
-- No manual setup required for new developers
-
-## Testing
-
-1. Select moods on different days
-2. Refresh page to verify persistence
-3. Rapid-click tiles to test race conditions
-4. Use keyboard (Tab/Enter/Esc) for navigation
-
-## Troubleshooting
-
-**Database not found**: Use `npm run start:dev` (auto-initializes) or manually run `npm run db:init`
-
-**Port 3000 in use**: Set custom port with `PORT=3001 npm run start:dev`
-
-**Build errors**: Delete `.next` and `node_modules`, then reinstall:
-```bash
-rm -rf .next node_modules
-npm install
-npm run build
-```
-
-## Development Notes
-
-**Dependencies Installation**
-- All dependencies are listed in `package.json`
-- Run `npm install` to install all required packages
-- `package-lock.json` ensures consistent dependency versions
-
-**Database Setup**
-- SQLite database (`moods.db`) is created automatically on first run
-- No external database server required
-- Data persists between server restarts
-
-**Environment Compatibility**
-- Tested on Node.js 18.18.0+
-- Cross-platform (Windows, macOS, Linux)
-- No platform-specific dependencies
-
----
-
-**Developed for Next.js Developer Task**
+[MIT](LICENSE)
