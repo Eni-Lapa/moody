@@ -2,6 +2,13 @@
   "name": "moody",
   "version": "0.1.0",
   "private": true,
+  "description": "Weekly mood board in Next.js and React with optimistic updates, ordered saves and rollback against a deliberately slow API.",
+  "author": "Polikseni Kokali",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Eni-Lapa/moody.git"
+  },
   "engines": {
     "node": ">=22.12"
   },
