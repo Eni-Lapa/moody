@@ -43,10 +43,8 @@ export function MoodTile({
     >
       {/* Day label */}
       <div
-        className={cn(
-          "absolute top-3 left-3 text-sm font-medium",
-          moodData ? "text-white/90" : "text-foreground"
-        )}
+        className="absolute top-3 left-3 text-sm font-medium text-foreground"
+        style={{ color: moodData?.textColor }}
       >
         {formattedDay}
       </div>

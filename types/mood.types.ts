@@ -18,6 +18,8 @@ export type DayOfWeek =
 export interface Mood {
   type: MoodType;
   color: string;
+  /** Text colour with at least 4.5:1 contrast on `color` (WCAG AA) */
+  textColor: string;
   emoji: string;
 }
 
