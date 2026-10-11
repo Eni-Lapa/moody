@@ -1,95 +1,30 @@
-import { UpdateMoodRequest, UpdateMoodResponse, Day } from "@/types/mood.types";
+import {
+  Day,
+  DayOfWeek,
+  MoodType,
+  UpdateMoodResponse,
+} from "@/types/mood.types";
 
-class DaysAPI {
-  private baseUrl = "/api/days";
+async function request<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(url, {
+    ...init,
+    headers: { "Content-Type": "application/json" },
+  });
 
-  /**
-   * Fetch all days with mood information for the week
-   */
-  async fetchDays(): Promise<Day[]> {
-    try {
-      const response = await fetch(this.baseUrl, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error || `Failed to fetch days (${response.status})`
-        );
-      }
-
-      return response.json();
-    } catch (error) {
-      // Re-throw with more context
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error("Network error while fetching days");
-    }
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error ?? `Request failed (${response.status})`);
   }
 
-  /**
-   * Update mood for a specific day
-   */
-  async updateSelectedDayMood(
-    day: string,
-    request: UpdateMoodRequest
-  ): Promise<UpdateMoodResponse> {
-    const { mood } = request;
-
-    try {
-      const response = await fetch(`${this.baseUrl}/${day}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mood }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error || `Failed to update mood (${response.status})`
-        );
-      }
-
-      return response.json();
-    } catch (error) {
-      // Re-throw with more context
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error("Network error while updating mood");
-    }
-  }
-
-  /**
-   * Clear mood for a specific day
-   */
-  async clearMood(day: string): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/${day}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error || `Failed to clear mood (${response.status})`
-        );
-      }
-
-      return response.json();
-    } catch (error) {
-      // Re-throw with more context
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error("Network error while clearing mood");
-    }
-  }
+  return response.json();
 }
 
-// Create singleton instance
-export const daysAPI = new DaysAPI();
+export const moodApi = {
+  fetchDays: () => request<Day[]>("/api/days"),
+
+  updateMood: (day: DayOfWeek, mood: MoodType) =>
+    request<UpdateMoodResponse>(`/api/days/${day}`, {
+      method: "PUT",
+      body: JSON.stringify({ mood }),
+    }),
+};

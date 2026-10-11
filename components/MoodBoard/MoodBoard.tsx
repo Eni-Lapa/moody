@@ -3,13 +3,13 @@
 import React, { useState } from "react";
 import { MoodTile } from "./MoodTile";
 import { MoodModal } from "./MoodModal";
-import { useMoods } from "@/hooks/use-moods";
+import { useMoods } from "@/contexts/MoodContext";
 import { MOODS } from "@/constants/moods";
 import { Day, DayOfWeek, MoodType } from "@/types/mood.types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function MoodBoard() {
-  const { days, isLoading, updateSelectedDayMood, getDisplayMood, isPending } =
+  const { days, isLoading, updateDayMood, getDisplayMood, isPending } =
     useMoods();
 
   const [selectedDay, setSelectedDay] = useState<DayOfWeek | null>(null);
@@ -22,7 +22,7 @@ export function MoodBoard() {
 
   const handleSelectMood = (mood: MoodType) => {
     if (selectedDay) {
-      updateSelectedDayMood(selectedDay, mood);
+      updateDayMood(selectedDay, mood);
       setModalOpen(false);
     }
   };

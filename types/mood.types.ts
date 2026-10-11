@@ -6,8 +6,6 @@ export type MoodType =
   | "relaxed"
   | "neutral";
 
-export type CurrentMoodType = MoodType | null;
-
 export type DayOfWeek =
   | "monday"
   | "tuesday"
@@ -26,10 +24,6 @@ export interface Mood {
 export interface Day {
   day: DayOfWeek;
   mood: MoodType | null;
-}
-
-export interface UpdateMoodRequest {
-  mood: MoodType;
 }
 
 export interface UpdateMoodResponse {
