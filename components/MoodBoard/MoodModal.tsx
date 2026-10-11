@@ -54,6 +54,7 @@ export function MoodModal({
               variant={currentMood === mood.type ? "secondary" : "outline"}
               className="h-auto flex-col py-4 relative group transition-all hover:scale-105"
               onClick={() => handleSelectMood(mood.type)}
+              aria-pressed={currentMood === mood.type}
               style={{
                 borderColor: currentMood === mood.type ? mood.color : undefined,
                 backgroundColor:
