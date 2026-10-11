@@ -1,63 +1,40 @@
-import { Day } from "@/types/mood.types";
+import { Day, DayOfWeek, MoodType } from "@/types/mood.types";
 import { db } from "./database";
 
-// Helper function to get day ID
-export function getDayId(dayName: string): Promise<number | null> {
+const SELECT_DAYS = `
+  SELECT d.name AS day, dm.mood_name AS mood
+  FROM days d
+  LEFT JOIN day_moods dm ON d.id = dm.day_id`;
+
+export function getAllDays(): Promise<Day[]> {
   return new Promise((resolve, reject) => {
-    db.get(
-      "SELECT id FROM days WHERE name = ?",
-      [dayName.toLowerCase()],
-      (err, row: { id: number } | undefined) => {
-        if (err) reject(err);
-        else resolve(row ? row.id : null);
-      }
-    );
+    db.all(`${SELECT_DAYS} ORDER BY d.order_index`, (err, rows: Day[]) => {
+      if (err) reject(err);
+      else resolve(rows);
+    });
   });
 }
 
-// Helper function to update mood
-export function updateSelectedDayMood(
-  dayId: number,
-  moodName: string | null
-): Promise<void> {
+export function getDay(day: DayOfWeek): Promise<Day | undefined> {
+  return new Promise((resolve, reject) => {
+    db.get(`${SELECT_DAYS} WHERE d.name = ?`, [day], (err, row?: Day) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+}
+
+export function setDayMood(day: DayOfWeek, mood: MoodType): Promise<void> {
   return new Promise((resolve, reject) => {
     db.run(
       `INSERT INTO day_moods (day_id, mood_name)
-       VALUES (?, ?)
+       SELECT id, ? FROM days WHERE name = ?
        ON CONFLICT(day_id) DO UPDATE SET mood_name = excluded.mood_name`,
-      [dayId, moodName],
+      [mood, day],
       (err) => {
         if (err) reject(err);
         else resolve();
       }
     );
-  });
-}
-
-// Helper Function to get all days from database
-export function getAllDays(): Promise<Day[]> {
-  return new Promise((resolve, reject) => {
-    const query = `
-      SELECT 
-        d.name as day,
-        dm.mood_name as mood
-      FROM days d
-      LEFT JOIN day_moods dm ON d.id = dm.day_id
-      ORDER BY d.order_index
-    `;
-
-    db.all(query, (err, rows: { day: string; mood: string | null }[]) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-
-      const days: Day[] = rows.map((row) => ({
-        day: row.day as Day["day"],
-        mood: row.mood as Day["mood"],
-      }));
-
-      resolve(days);
-    });
   });
 }
