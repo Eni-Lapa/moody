@@ -4,31 +4,37 @@ export const MOODS: Record<MoodType, Mood> = {
   happy: {
     type: "happy",
     color: "#FACC15",
+    textColor: "#020617",
     emoji: "🙂",
   },
   tired: {
     type: "tired",
     color: "#60A5FA",
+    textColor: "#020617",
     emoji: "😪",
   },
   focused: {
     type: "focused",
     color: "#14B8A6",
+    textColor: "#020617",
     emoji: "🎯",
   },
   stressed: {
     type: "stressed",
     color: "#EF4444",
+    textColor: "#020617",
     emoji: "😖",
   },
   relaxed: {
     type: "relaxed",
     color: "#A78BFA",
+    textColor: "#020617",
     emoji: "🧘",
   },
   neutral: {
     type: "neutral",
     color: "#64748B",
+    textColor: "#FFFFFF",
     emoji: "😐",
   },
 };
