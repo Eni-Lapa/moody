@@ -9,7 +9,7 @@ import React, {
   useEffect,
 } from "react";
 import { DayOfWeek, MoodType, Day } from "@/types/mood.types";
-import { daysAPI } from "@/app/services/mood.api";
+import { moodApi } from "@/app/services/mood.api";
 import { toast } from "sonner";
 import { formatDayOfWeek } from "@/lib/utils";
 
@@ -47,7 +47,7 @@ export function MoodProvider({ children }: { children: ReactNode }) {
   const refreshDays = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await daysAPI.fetchDays();
+      const data = await moodApi.fetchDays();
       setDays(data);
     } catch (error) {
       console.error("[MoodContext] refreshDays: error", error);
@@ -119,7 +119,7 @@ export function MoodProvider({ children }: { children: ReactNode }) {
 
     try {
       // Fire server update in the background
-      const response = await daysAPI.updateSelectedDayMood(day, { mood });
+      const response = await moodApi.updateMood(day, mood);
 
       // Clear loading toast if it was shown
       clearTimeout(loadingToastTimeout);
@@ -199,10 +199,10 @@ export function MoodProvider({ children }: { children: ReactNode }) {
   return <MoodContext.Provider value={value}>{children}</MoodContext.Provider>;
 }
 
-export function useMoodContext() {
+export function useMoods() {
   const context = useContext(MoodContext);
   if (!context) {
-    throw new Error("useMoodContext must be used within MoodProvider");
+    throw new Error("useMoods must be used within MoodProvider");
   }
   return context;
 }
